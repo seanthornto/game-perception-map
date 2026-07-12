@@ -55,7 +55,7 @@ const CONFIG = {
 
   // Paste the Google Apps Script deployment URL here.
   // Leave blank to test locally; submissions will download as JSON instead.
-  endpointUrl: ""
+  endpointUrl: "https://script.google.com/macros/s/AKfycbwO9Av9EIwMqmWkTpGUo7lpo4mWe9njnzZ0uZesdqrWUynpuk6QnvhE2Q59A2HSsG5AHQ/exec"
 };
 
 const state = {

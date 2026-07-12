@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Game Perception Map</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Community perception map</p>
+        <h1 id="page-title">Place each game on the map</h1>
+        <p id="instructions">
+          Drag every title onto the chart. You can move items again before submitting.
+        </p>
+      </div>
+      <button id="reset-button" class="secondary-button" type="button">Reset</button>
+    </header>
+
+    <section class="identity-card">
+      <label for="respondent-name">Your name or nickname <span>(optional)</span></label>
+      <input id="respondent-name" type="text" maxlength="80" placeholder="Anonymous" />
+    </section>
+
+    <section class="workspace">
+      <div class="map-column">
+        <div class="chart-layout">
+          <div class="y-axis-title" id="y-high-label">Perceived Player Expression</div>
+
+          <div class="chart-stack">
+            <div id="plot" class="plot origin-corner" aria-label="Two-dimensional voting chart">
+              <div class="grid-lines" aria-hidden="true"></div>
+              <div class="horizontal-axis" aria-hidden="true"></div>
+              <div class="vertical-axis" aria-hidden="true"></div>
+            </div>
+
+            <div class="x-axis-title" id="x-high-label">Mechanical Fidelity</div>
+          </div>
+
+          <div class="origin-label" id="origin-label">0</div>
+        </div>
+      </div>
+
+      <aside class="tray-column">
+        <div class="tray-heading">
+          <h2 id="item-heading">Game titles</h2>
+          <span id="progress-count">0 / 0 placed</span>
+        </div>
+        <div id="item-tray" class="item-tray"></div>
+        <p class="tray-help">Tip: on a phone, press and drag a card with one finger.</p>
+      </aside>
+    </section>
+
+    <section class="submit-panel">
+      <div>
+        <strong id="status-title">Place every title to continue.</strong>
+        <p id="status-message">Your vote is not submitted until you press the button.</p>
+      </div>
+      <button id="submit-button" class="primary-button" type="button" disabled>
+        Submit placements
+      </button>
+    </section>
+
+    <dialog id="success-dialog">
+      <h2>Thank you!</h2>
+      <p>Your placements have been recorded.</p>
+      <button id="close-dialog" class="primary-button" type="button">Done</button>
+    </dialog>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

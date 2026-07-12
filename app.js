@@ -49,7 +49,8 @@ const CONFIG = {
     "Outer Wilds",
      "QWOP",
     "Getting Over it",
-    "Chained Together"
+    "Chained Together",
+    "Celeste"
   ],
 
   // Paste the Google Apps Script deployment URL here.

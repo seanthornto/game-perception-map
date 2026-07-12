@@ -20,8 +20,9 @@
     </header>
 
     <section class="identity-card">
-      <label for="respondent-name">Your name or nickname <span>(optional)</span></label>
-      <input id="respondent-name" type="text" maxlength="80" placeholder="Anonymous" />
+      <label for="respondent-name">Participant Name <span>(required)</span></label>
+      <input id="respondent-name" type="text" maxlength="80" placeholder="Enter your name" required autocomplete="name" />
+      <p class="field-help">This is used only to label your response in the Google Sheet.</p>
     </section>
 
     <section class="workspace">
@@ -49,7 +50,7 @@
           <span id="progress-count">0 / 0 placed</span>
         </div>
         <div id="item-tray" class="item-tray"></div>
-        <p class="tray-help">Tip: on a phone, press and drag a card with one finger.</p>
+        <p class="tray-help">Drag titles you know onto the chart. Select “I don’t know this title” for any title you cannot evaluate.</p>
       </aside>
     </section>
 

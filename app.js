@@ -22,7 +22,7 @@ const CONFIG = {
     yHigh: "Perceived Player Expression"
   },
 
-  items: [
+   items: [
     "Minecraft",
     "The Legend of Zelda: Breath of the Wild",
     "Dark Souls",
@@ -88,6 +88,9 @@ function initialize() {
     row.className = "title-row";
     row.dataset.item = label;
 
+    const main = document.createElement("div");
+    main.className = "title-card-main";
+
     const card = document.createElement("button");
     card.type = "button";
     card.className = "movie-card";
@@ -96,9 +99,14 @@ function initialize() {
     card.dataset.index = String(index);
     card.addEventListener("pointerdown", startDrag);
 
-    const placeholder = document.createElement("div");
+    const placeholder = document.createElement("button");
+    placeholder.type = "button";
     placeholder.className = "movie-card-placeholder";
-    placeholder.textContent = "Placed on chart";
+    placeholder.innerHTML = `<span aria-hidden="true">✓</span><span>${label}</span>`;
+    placeholder.addEventListener("click", () => highlightPlacedItem(label));
+
+    const actions = document.createElement("div");
+    actions.className = "title-actions";
 
     const unknownLabel = document.createElement("label");
     unknownLabel.className = "unknown-control";
@@ -112,12 +120,27 @@ function initialize() {
     const unknownText = document.createElement("span");
     unknownText.textContent = "I don’t know this title";
 
+    const statusBadge = document.createElement("span");
+    statusBadge.className = "status-badge";
+    statusBadge.textContent = "Placed";
+
+    const locateButton = document.createElement("button");
+    locateButton.type = "button";
+    locateButton.className = "locate-button";
+    locateButton.textContent = "Locate";
+    locateButton.addEventListener("click", () => highlightPlacedItem(label));
+
     unknownLabel.appendChild(unknownCheckbox);
     unknownLabel.appendChild(unknownText);
 
-    row.appendChild(card);
-    row.appendChild(placeholder);
-    row.appendChild(unknownLabel);
+    actions.appendChild(unknownLabel);
+    actions.appendChild(statusBadge);
+    actions.appendChild(locateButton);
+
+    main.appendChild(card);
+    main.appendChild(placeholder);
+    row.appendChild(main);
+    row.appendChild(actions);
     tray.appendChild(row);
   });
 
@@ -211,11 +234,17 @@ function endDrag(event) {
     });
 
     const row = getTitleRow(card.dataset.item);
-    if (row) row.classList.add("is-placed");
+    if (row) {
+      row.classList.add("is-placed");
+      row.classList.remove("is-unknown");
+      const badge = row.querySelector(".status-badge");
+      if (badge) badge.textContent = "Placed";
+    }
   } else {
     const row = getTitleRow(card.dataset.item);
     if (row) {
-      row.insertBefore(card, row.firstChild);
+      const main = row.querySelector(".title-card-main");
+      if (main) main.insertBefore(card, main.firstChild);
       row.classList.remove("is-placed");
     }
     card.classList.remove("placed");
@@ -265,13 +294,16 @@ function resetPlacements() {
 
     const card = row.querySelector(".movie-card");
     const checkbox = row.querySelector(".unknown-control input");
+    const badge = row.querySelector(".status-badge");
 
-    row.insertBefore(card, row.firstChild);
+    const main = row.querySelector(".title-card-main");
+    if (main) main.insertBefore(card, main.firstChild);
     card.classList.remove("placed", "dragging");
     card.style.left = "";
     card.style.top = "";
     card.disabled = false;
     checkbox.checked = false;
+    if (badge) badge.textContent = "Placed";
   });
 
   updateProgress();
@@ -288,9 +320,12 @@ function toggleUnknown(event) {
     state.placements.delete(item);
 
     if (row && card) {
-      row.insertBefore(card, row.firstChild);
+      const main = row.querySelector(".title-card-main");
+      if (main) main.insertBefore(card, main.firstChild);
       row.classList.remove("is-placed");
       row.classList.add("is-unknown");
+      const badge = row.querySelector(".status-badge");
+      if (badge) badge.textContent = "Unknown";
       card.classList.remove("placed", "dragging");
       card.style.left = "";
       card.style.top = "";
@@ -301,11 +336,33 @@ function toggleUnknown(event) {
 
     if (row && card) {
       row.classList.remove("is-unknown");
+      const badge = row.querySelector(".status-badge");
+      if (badge) badge.textContent = "Placed";
       card.disabled = false;
     }
   }
 
   updateProgress();
+}
+
+function highlightPlacedItem(item) {
+  const card = document.querySelector(`.movie-card.placed[data-item="${cssEscape(item)}"]`);
+  const row = getTitleRow(item);
+
+  document.querySelectorAll(".title-row.is-selected").forEach(el => el.classList.remove("is-selected"));
+  if (row) row.classList.add("is-selected");
+
+  if (!card) return;
+
+  card.classList.remove("highlighted");
+  void card.offsetWidth;
+  card.classList.add("highlighted");
+  card.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+
+  window.setTimeout(() => {
+    card.classList.remove("highlighted");
+    if (row) row.classList.remove("is-selected");
+  }, 1300);
 }
 
 function getTitleRow(item) {

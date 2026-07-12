@@ -46,7 +46,10 @@ const CONFIG = {
     "Journey",
     "Half-Life 2",
     "Tetris",
-    "Outer Wilds"
+    "Outer Wilds",
+     "QWOP",
+    "Getting Over it",
+    "Chained Together"
   ],
 
   // Paste the Google Apps Script deployment URL here.

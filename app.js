@@ -26,20 +26,37 @@ const CONFIG = {
     "Minecraft",
     "The Legend of Zelda: Breath of the Wild",
     "Dark Souls",
-    "The Sims 4",
+    "Super Mario 64",
+    "Super Mario Galaxy",
     "Super Mario Odyssey",
-    "Baldur's Gate 3",
-    "Call of Duty",
-    "Stardew Valley"
+    "Chess",
+    "Animal Crossing",
+    "League of Legends",
+    "Apex Legends",
+    "SSB 64",
+    "SSB: Melee",
+    "SSB: Brawl",
+    "SSB 4",
+    "SSB: Ultimate",
+    "Straight out of Neutch",
+    "The Mix-ologist",
+    "hyperkidmorph2mr.gunner",
+    "Portal",
+    "Hades",
+    "Journey",
+    "Half-Life 2",
+    "Tetris",
+    "Outer Wilds"
   ],
 
   // Paste the Google Apps Script deployment URL here.
   // Leave blank to test locally; submissions will download as JSON instead.
-  endpointUrl: "https://script.google.com/macros/s/AKfycbwO9Av9EIwMqmWkTpGUo7lpo4mWe9njnzZ0uZesdqrWUynpuk6QnvhE2Q59A2HSsG5AHQ/exec"
+  endpointUrl: ""
 };
 
 const state = {
   placements: new Map(),
+  unknownItems: new Set(),
   dragging: null
 };
 
@@ -51,6 +68,7 @@ const progressCount = document.getElementById("progress-count");
 const statusTitle = document.getElementById("status-title");
 const statusMessage = document.getElementById("status-message");
 const successDialog = document.getElementById("success-dialog");
+const respondentNameInput = document.getElementById("respondent-name");
 
 initialize();
 
@@ -66,6 +84,10 @@ function initialize() {
   plot.classList.toggle("origin-center", CONFIG.axisMode === "quadrants");
 
   CONFIG.items.forEach((label, index) => {
+    const row = document.createElement("div");
+    row.className = "title-row";
+    row.dataset.item = label;
+
     const card = document.createElement("button");
     card.type = "button";
     card.className = "movie-card";
@@ -73,10 +95,34 @@ function initialize() {
     card.dataset.item = label;
     card.dataset.index = String(index);
     card.addEventListener("pointerdown", startDrag);
-    tray.appendChild(card);
+
+    const placeholder = document.createElement("div");
+    placeholder.className = "movie-card-placeholder";
+    placeholder.textContent = "Placed on chart";
+
+    const unknownLabel = document.createElement("label");
+    unknownLabel.className = "unknown-control";
+
+    const unknownCheckbox = document.createElement("input");
+    unknownCheckbox.type = "checkbox";
+    unknownCheckbox.dataset.item = label;
+    unknownCheckbox.setAttribute("aria-label", `I don't know ${label}`);
+    unknownCheckbox.addEventListener("change", toggleUnknown);
+
+    const unknownText = document.createElement("span");
+    unknownText.textContent = "I don’t know this title";
+
+    unknownLabel.appendChild(unknownCheckbox);
+    unknownLabel.appendChild(unknownText);
+
+    row.appendChild(card);
+    row.appendChild(placeholder);
+    row.appendChild(unknownLabel);
+    tray.appendChild(row);
   });
 
   submitButton.addEventListener("click", submitPlacements);
+  respondentNameInput.addEventListener("input", updateProgress);
   resetButton.addEventListener("click", resetPlacements);
   document.getElementById("close-dialog").addEventListener("click", () => successDialog.close());
 
@@ -87,6 +133,7 @@ function startDrag(event) {
   event.preventDefault();
 
   const card = event.currentTarget;
+  if (state.unknownItems.has(card.dataset.item)) return;
   const originalRect = card.getBoundingClientRect();
 
   state.dragging = {
@@ -162,8 +209,15 @@ function endDrag(event) {
       x: round(xValue, 2),
       y: round(yValue, 2)
     });
+
+    const row = getTitleRow(card.dataset.item);
+    if (row) row.classList.add("is-placed");
   } else {
-    tray.appendChild(card);
+    const row = getTitleRow(card.dataset.item);
+    if (row) {
+      row.insertBefore(card, row.firstChild);
+      row.classList.remove("is-placed");
+    }
     card.classList.remove("placed");
     card.style.left = "";
     card.style.top = "";
@@ -176,46 +230,128 @@ function endDrag(event) {
 
 function updateProgress() {
   const placed = state.placements.size;
+  const unknown = state.unknownItems.size;
+  const resolved = placed + unknown;
   const total = CONFIG.items.length;
-  progressCount.textContent = `${placed} / ${total} placed`;
+  const hasName = respondentNameInput.value.trim().length > 0;
 
-  const complete = placed === total;
-  submitButton.disabled = !complete;
-  statusTitle.textContent = complete
-    ? "Everything is placed."
-    : `Place ${total - placed} more ${total - placed === 1 ? "title" : "titles"} to continue.`;
+  progressCount.textContent = `${resolved} / ${total} completed`;
 
-  statusMessage.textContent = complete
-    ? "Review your map, then submit when ready."
-    : "Your vote is not submitted until you press the button.";
+  const titlesComplete = resolved === total;
+  const ready = titlesComplete && hasName;
+  submitButton.disabled = !ready;
+
+  if (!hasName && !titlesComplete) {
+    statusTitle.textContent = `Enter your name and complete ${total - resolved} more ${total - resolved === 1 ? "title" : "titles"}.`;
+    statusMessage.textContent = "Place each known title or mark it as unknown.";
+  } else if (!hasName) {
+    statusTitle.textContent = "Enter your name to continue.";
+    statusMessage.textContent = "The name is used only to label your row in the Google Sheet.";
+  } else if (!titlesComplete) {
+    statusTitle.textContent = `Complete ${total - resolved} more ${total - resolved === 1 ? "title" : "titles"} to continue.`;
+    statusMessage.textContent = "Place each known title or mark it as unknown.";
+  } else {
+    statusTitle.textContent = "Everything is ready.";
+    statusMessage.textContent = `${placed} placed and ${unknown} marked unknown. Review, then submit.`;
+  }
 }
 
 function resetPlacements() {
   state.placements.clear();
-  document.querySelectorAll(".movie-card").forEach(card => {
-    tray.appendChild(card);
+  state.unknownItems.clear();
+
+  document.querySelectorAll(".title-row").forEach(row => {
+    row.classList.remove("is-placed", "is-unknown");
+
+    const card = row.querySelector(".movie-card");
+    const checkbox = row.querySelector(".unknown-control input");
+
+    row.insertBefore(card, row.firstChild);
     card.classList.remove("placed", "dragging");
     card.style.left = "";
     card.style.top = "";
+    card.disabled = false;
+    checkbox.checked = false;
   });
+
   updateProgress();
 }
 
+function toggleUnknown(event) {
+  const checkbox = event.currentTarget;
+  const item = checkbox.dataset.item;
+  const row = getTitleRow(item);
+  const card = document.querySelector(`.movie-card[data-item="${cssEscape(item)}"]`);
+
+  if (checkbox.checked) {
+    state.unknownItems.add(item);
+    state.placements.delete(item);
+
+    if (row && card) {
+      row.insertBefore(card, row.firstChild);
+      row.classList.remove("is-placed");
+      row.classList.add("is-unknown");
+      card.classList.remove("placed", "dragging");
+      card.style.left = "";
+      card.style.top = "";
+      card.disabled = true;
+    }
+  } else {
+    state.unknownItems.delete(item);
+
+    if (row && card) {
+      row.classList.remove("is-unknown");
+      card.disabled = false;
+    }
+  }
+
+  updateProgress();
+}
+
+function getTitleRow(item) {
+  return document.querySelector(`.title-row[data-item="${cssEscape(item)}"]`);
+}
+
+function cssEscape(value) {
+  if (window.CSS && CSS.escape) return CSS.escape(value);
+  return value.replace(/["\\]/g, "\\$&");
+}
+
 async function submitPlacements() {
+  const respondent = respondentNameInput.value.trim();
+
+  if (!respondent) {
+    respondentNameInput.focus();
+    statusTitle.textContent = "Please enter your name.";
+    statusMessage.textContent = "The name is required so your response can be labeled in the Google Sheet.";
+    return;
+  }
+
+  if (state.placements.size + state.unknownItems.size !== CONFIG.items.length) {
+    updateProgress();
+    return;
+  }
+
   const range = CONFIG.axisMode === "quadrants" ? "-100 to 100" : "0 to 100";
 
   const payload = {
     surveyTitle: CONFIG.title,
     axisMode: CONFIG.axisMode,
     coordinateRange: range,
-    respondent: document.getElementById("respondent-name").value.trim() || "Anonymous",
+    respondent,
     submittedAt: new Date().toISOString(),
     userAgent: navigator.userAgent,
-    placements: CONFIG.items.map(item => ({
-      item,
-      x: state.placements.get(item).x,
-      y: state.placements.get(item).y
-    }))
+    placements: CONFIG.items.map(item => {
+      const placement = state.placements.get(item);
+      const known = !state.unknownItems.has(item);
+
+      return {
+        item,
+        known,
+        x: known && placement ? placement.x : null,
+        y: known && placement ? placement.y : null
+      };
+    })
   };
 
   submitButton.disabled = true;
